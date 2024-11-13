@@ -1,0 +1,47 @@
+/* datn/src/components/LocationSearch.css */
+
+.location-search-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+  
+  .location-search-container h2 {
+    text-align: center;
+    color: #333;
+  }
+  
+  .location-search-container input[type="text"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .location-search-container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  
+  .location-search-container button:hover {
+    background-color: #0056b3;
+  }
+  
+  .location-search-container p {
+    color: #d9534f;
+    text-align: center;
+  }
+  
+  .map-container {
+    margin-top: 20px;
+  }

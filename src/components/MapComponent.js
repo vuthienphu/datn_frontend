@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { defaultCustomMarkerIcon } from './MapUtils'; // Import default custom icon
+import {defaultCustomMarkerIcon} from './MapUtils'; // Import default custom icon
 import 'leaflet/dist/leaflet.css';
 
 
@@ -75,3 +75,4 @@ const MapComponent = () => {
 };
 
 export default MapComponent;
+

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { customMarkerIcon } from './MapUtils'; // Import custom icon
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-
+import '../assets/styles/LocationSearch.css'
 
 
 
@@ -56,7 +56,8 @@ function LocationSearch() {
   };
 
   return (
-    <div >
+    <>
+    <div className='location-search-container'>
       <h2>Tìm kiếm, đánh dấu và lưu tọa độ địa điểm</h2>
       <input
         type="text"
@@ -68,17 +69,16 @@ function LocationSearch() {
 
       {coordinates && (
         <div>
-          <h3>Tọa độ</h3>
-          <p>Longitude: {coordinates.lon}</p>
-          <p>Latitude: {coordinates.lat}</p>
-          <button onClick={handleSave}>Lưu vào MySQL</button>
+          
+          <button onClick={handleSave}>Lưu vị trí</button>
         </div>
       )}
 
       {message && <p>{message}</p>}
-
+</div>
+<div className='map-container'>
       {coordinates && (
-        <MapContainer center={[coordinates.lat, coordinates.lon]} zoom={13} style={{ height: '400px', width: '100%' }}>
+        <MapContainer  center={[coordinates.lat, coordinates.lon]} zoom={13} style={{ height: '400px', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -89,6 +89,7 @@ function LocationSearch() {
         </MapContainer>
       )}
     </div>
+    </>
   );
 }
 

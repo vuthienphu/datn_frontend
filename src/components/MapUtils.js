@@ -15,3 +15,6 @@ export const defaultCustomMarkerIcon = new L.Icon({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
   shadowSize: [41, 41],
 });
+
+
+
