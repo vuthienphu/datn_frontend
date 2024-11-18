@@ -16,5 +16,22 @@ export const defaultCustomMarkerIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+export const startIcon = new L.Icon({
+  iconUrl: 'https://example.com/path-to-green-marker-icon.png',  // Update with green marker URL
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  shadowSize: [41, 41]
+});
+
+export const endIcon = new L.Icon({
+  iconUrl: 'https://example.com/path-to-red-marker-icon.png',  // Update with red marker URL
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  shadowSize: [41, 41]
+});
 
 

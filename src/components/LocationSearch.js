@@ -2,95 +2,171 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { customMarkerIcon } from './MapUtils'; // Import custom icon
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import '../assets/styles/LocationSearch.css'
-
-
+import '../assets/styles/LocationSearch.css';
 
 function LocationSearch() {
   const [location, setLocation] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
   const [coordinates, setCoordinates] = useState(null);
   const [message, setMessage] = useState('');
+  const [locationCode, setLocationCode] = useState('');
+  const [locationName, setLocationName] = useState('');
+  const [messageType, setMessageType] = useState('');
 
-  const handleSearch = async () => {
-    setMessage('');
-    try {
-      const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-        params: {
-          q: location,
-          format: 'json',
-          limit: 1,
-        },
-      });
+  const handleInputChange = async (e) => {
+    const input = e.target.value;
+    setLocation(input);
 
-      if (response.data && response.data.length > 0) {
-        const { lat, lon } = response.data[0];
-        setCoordinates({ lat: parseFloat(lat), lon: parseFloat(lon) });
-      } else {
-        setMessage('Không tìm thấy địa điểm');
+    if (input.length > 2) { // Chỉ tìm kiếm khi input > 2 ký tự
+      try {
+        const response = await axios.get('https://api.opencagedata.com/geocode/v1/json', {
+          params: {
+            q: input,
+            key: '9f887eb1151246da8ca473b05d3c3166', // Thay bằng API key của bạn
+            limit: 5,
+          },
+        });
+
+        if (response.data && response.data.results) {
+          setSuggestions(response.data.results);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tìm kiếm gợi ý:', error);
+        setSuggestions([]);
       }
-    } catch (error) {
-      setMessage('Có lỗi xảy ra khi tìm kiếm tọa độ');
+    } else {
+      setSuggestions([]);
     }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    const { geometry, formatted } = suggestion;
+    setCoordinates({ lat: geometry.lat, lon: geometry.lng });
+    setLocation(formatted); // Gán tên địa điểm đã chọn
+    setSuggestions([]); // Ẩn danh sách gợi ý
+  };
+
+  const handleReset = () => {
+    setLocationCode('');
+    setLocationName('');
+    setLocation('');
+    setCoordinates(null);
+    setSuggestions([]);
+    setMessage('');
   };
 
   const handleSave = async () => {
     if (!coordinates) {
-      setMessage('Bạn cần tìm tọa độ trước khi lưu');
+      setMessage('Bạn cần chọn tọa độ trước khi lưu');
+      setMessageType('error');
+      return;
+    }
+    if (!locationCode || !locationName) {
+      setMessage('Vui lòng nhập đầy đủ mã điểm và tên điểm');
+      setMessageType('error');
       return;
     }
     try {
       const response = await axios.post('http://localhost:8080/api/locations', {
-        name: location,
+        point_code: locationCode,
+        point_name: locationName,
+        address: location,
         longitude: coordinates.lon,
-        latitude: coordinates.lat
+        latitude: coordinates.lat,
       });
 
       if (response.status === 201) {
         setMessage('Đã lưu địa điểm thành công');
+        setMessageType('success');
+         // Reset form sau khi lưu thành công
       } else {
         setMessage('Không thể lưu địa điểm');
+        setMessageType('error');
       }
     } catch (error) {
       setMessage('Có lỗi xảy ra khi lưu địa điểm');
+      setMessageType('error');
     }
   };
 
   return (
     <>
-    <div className='location-search-container'>
-      <h2>Tìm kiếm, đánh dấu và lưu tọa độ địa điểm</h2>
-      <input
-        type="text"
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-        placeholder="Nhập địa điểm..."
-      />
-      <button onClick={handleSearch}>Tìm tọa độ</button>
+      <div className='location-search-container'>
+        <h2>Tìm kiếm, đánh dấu và lưu tọa độ địa điểm</h2>
+        <input
+          type="text"
+          value={locationCode}
+          onChange={(e) => setLocationCode(e.target.value)}
+          placeholder="Nhập mã điểm..."
+        />
+        <input
+          type="text"
+          value={locationName}
+          onChange={(e) => setLocationName(e.target.value)}
+          placeholder="Nhập tên điểm..."
+        />
+        <input
+          type="text"
+          value={location}
+          onChange={handleInputChange}
+          placeholder="Nhập địa điểm..."
+        />
+        {suggestions.length > 0 && (
+          <ul className="suggestions-list">
+            {suggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="suggestion-item"
+              >
+                {suggestion.formatted}
+              </li>
+            ))}
+          </ul>
+        )}
+        
+        {coordinates && (
+          <>
+            <div className="coordinates-display">
+              <p>Kinh độ: {coordinates.lon}</p>
+              <p>Vĩ độ: {coordinates.lat}</p>
+            </div>
+            <div className="button-group">
+              <button onClick={handleSave}>Lưu vị trí</button>
+              <button onClick={handleReset}>Huỷ bỏ</button>
+            </div>
+          </>
+        )}
 
-      {coordinates && (
-        <div>
-          
-          <button onClick={handleSave}>Lưu vị trí</button>
-        </div>
-      )}
+        {message && (
+          <div className={`message ${messageType}`}>
+            {message}
+          </div>
+        )}
 
-      {message && <p>{message}</p>}
-</div>
 <div className='map-container'>
-      {coordinates && (
-        <MapContainer  center={[coordinates.lat, coordinates.lon]} zoom={13} style={{ height: '400px', width: '100%' }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          <Marker position={[coordinates.lat,coordinates.lon]} icon={customMarkerIcon}>
-            <Popup>{location}</Popup>
-          </Marker>
-        </MapContainer>
-      )}
-    </div>
+        {coordinates && (
+          <MapContainer
+            center={[coordinates.lat, coordinates.lon]}
+            zoom={13}
+            style={{ height: '400px', width: '100%' }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            <Marker position={[coordinates.lat, coordinates.lon]} icon={customMarkerIcon}>
+              <Popup>{location}</Popup>
+            </Marker>
+          </MapContainer>
+        )}
+      </div>
+      </div>
+      
+      
     </>
   );
 }
 
 export default LocationSearch;
+
