@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate,useParams } from 'react-router-dom'; // Import useNavigate
 import Pagination from './Pagination'; // Import the Pagination component
 import '../assets/styles/ConfigTable.css';
 
@@ -18,6 +19,8 @@ const ConfigTable = () => {
   const [message, setMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const navigate = useNavigate(); // Initialize useNavigate
+  const { id } = useParams(); // Get the id from the URL
 
   // Fetch dữ liệu từ API
   useEffect(() => {
@@ -88,6 +91,7 @@ const ConfigTable = () => {
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setMessage('');
+    navigate('/config');
   };
 
   // Xử lý thay đổi trong form
@@ -125,6 +129,11 @@ const ConfigTable = () => {
         setMessage('Cập nhật thất bại. Vui lòng thử lại.');
       });
   };
+// New function to handle navigation
+const handleEditNavigation = (config) => {
+  navigate(`/config/${config.id}`);
+  openEditModal(config)
+};
 
   return (
     <div className="config-container">
@@ -158,7 +167,7 @@ const ConfigTable = () => {
                 />
               </td>
               <td className="action-buttons">
-                <button className="edit-button" onClick={() => openEditModal(config)}>
+                <button className="edit-button" onClick={() => handleEditNavigation(config)}>
                   Chỉnh sửa
                 </button>
                 <button className="delete-button" onClick={() => openDeleteModal(config.id)}>

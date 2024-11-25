@@ -8,6 +8,7 @@ import LocationTable from './components/LocationTable';
 import ConfigForm from './components/ConfigForm';
 import ConfigTable from './components/ConfigTable';
 import './App.css'
+import UpdateLocationForm from './components/UpdateLocationForm';
 
 function App() {
   return (
@@ -16,10 +17,13 @@ function App() {
         <Navbar />
         <Routes>
           <Route path="/" element={<MapComponent />} />
-          <Route path="/location-search" element={<LocationSearch />} />
-          <Route path="/location-table" element={<LocationTable />} />
+          <Route path="/location/location-search" element={<LocationSearch />} />
+          <Route path="/location" element={<LocationTable />} />
+          <Route path="/location/:id" element={<UpdateLocationForm />} /> {/* Add this line */}
           <Route path="/config/config-form" element={<ConfigForm />} />
-          <Route path="/config/manage" element={<ConfigTable />} />
+          <Route path="/config" element={<ConfigTable />} />
+          <Route path="/config/:id" element={<ConfigTable />} /> {/* Add this line */}
+
         </Routes>
       </div>
     </Router>

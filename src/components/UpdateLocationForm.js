@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
 import { customMarkerIcon } from './MapUtils'; // Import custom icon
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import '../assets/styles/LocationSearch.css';
 
-function LocationSearch() {
+function UpdateLocationForm() {
   const [location, setLocation] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [coordinates, setCoordinates] = useState(null);
@@ -12,6 +13,20 @@ function LocationSearch() {
   const [locationCode, setLocationCode] = useState('');
   const [locationName, setLocationName] = useState('');
   const [messageType, setMessageType] = useState('');
+  const { id } = useParams(); // Get the location ID from the URL
+  const navigate = useNavigate();
+  useEffect(() => {
+    // Fetch the location data based on the ID
+    axios.get(`http://localhost:8080/api/locations/${id}`)
+      .then(response => {
+        const data = response.data;
+        setLocation(data.address);
+        setLocationCode(data.point_code);
+        setLocationName(data.point_name);
+        setCoordinates({ lat: data.latitude, lon: data.longitude });
+      })
+      .catch(error => console.error('Error fetching location data:', error));
+  }, [id]);
 
   const handleInputChange = async (e) => {
     const input = e.target.value;
@@ -53,6 +68,7 @@ function LocationSearch() {
     setCoordinates(null);
     setSuggestions([]);
     setMessage('');
+    navigate('/location');
   };
 
   const handleSave = async () => {
@@ -67,7 +83,7 @@ function LocationSearch() {
       return;
     }
     try {
-      const response = await axios.post('http://localhost:8080/api/locations', {
+      const response = await axios.put(`http://localhost:8080/api/locations/${id}`, {
         point_code: locationCode,
         point_name: locationName,
         address: location,
@@ -75,16 +91,16 @@ function LocationSearch() {
         latitude: coordinates.lat,
       });
 
-      if (response.status === 201) {
-        setMessage('Đã lưu địa điểm thành công');
+      if (response.status === 200) {
+        setMessage('Đã cập nhật địa điểm thành công');
         setMessageType('success');
-         // Reset form sau khi lưu thành công
+         // Reset form sau khi cập nhật thành công
       } else {
-        setMessage('Không thể lưu địa điểm');
+        setMessage('Không thể cập nhật địa điểm');
         setMessageType('error');
       }
     } catch (error) {
-      setMessage('Có lỗi xảy ra khi lưu địa điểm');
+      setMessage('Có lỗi xảy ra khi cập nhật địa điểm');
       setMessageType('error');
     }
   };
@@ -177,5 +193,5 @@ function LocationSearch() {
   );
 }
 
-export default LocationSearch;
+export default UpdateLocationForm;
 
