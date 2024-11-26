@@ -6,7 +6,15 @@ import '../assets/styles/Navbar.css';
 const Navbar = () => {
     return (
       <nav className="navbar">
-        <Link to="/">Trang chủ</Link>
+        
+        <div className="dropdown">
+        <Link to="/" className="dropbtn">Quản lý tuyến đường</Link>
+        <div className="dropdown-content">
+            <Link to="/">Lộ trình</Link>
+            <Link to="/route">Tạo tuyến</Link>
+            <Link to="/route/manage">Quản lý tuyến</Link>
+          </div>
+        </div>
         <div className="dropdown">
           <Link to="/location" className="dropbtn">Địa điểm</Link>
           <div className="dropdown-content">

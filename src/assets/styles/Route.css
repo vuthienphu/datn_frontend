@@ -1,0 +1,82 @@
+/* Route.css */
+
+.route-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .route-code-input {
+    margin-bottom: 20px;
+  }
+  
+  .route-code-input label {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .route-code-input input {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+  }
+  .points-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  
+  .points-table th,
+  .points-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+  }
+  
+  .points-table th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+  }
+  
+  .location-select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  
+  .delete-btn {
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .button-group {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .button-group button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .button-group button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  .button-group button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }

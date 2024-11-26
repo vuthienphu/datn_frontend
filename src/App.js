@@ -1,6 +1,6 @@
 import React from 'react';
 
-import MapComponent from './components/MapComponent';
+import MapComponent from './components/Route';
 import LocationSearch from './components/LocationSearch';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
