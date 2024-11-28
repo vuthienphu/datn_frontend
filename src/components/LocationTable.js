@@ -69,8 +69,8 @@ const LocationTable = () => {
                 <tbody>
                     {currentLocations.map(location => (
                         <tr key={location.id}>
-                            <td>{location.point_code}</td>
-                            <td>{location.point_name}</td>
+                            <td>{location.pointCode}</td>
+                            <td>{location.pointName}</td>
                             <td>{location.address}</td>
                             <td className="action-buttons">
                                 <button className="edit-button" onClick={() => handleEdit(location)}>Chỉnh sửa</button>

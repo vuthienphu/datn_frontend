@@ -68,8 +68,8 @@ function LocationSearch() {
     }
     try {
       const response = await axios.post('http://localhost:8080/api/locations', {
-        point_code: locationCode,
-        point_name: locationName,
+        pointCode: locationCode,
+        pointName: locationName,
         address: location,
         longitude: coordinates.lon,
         latitude: coordinates.lat,

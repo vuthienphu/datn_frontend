@@ -21,8 +21,8 @@ function UpdateLocationForm() {
       .then(response => {
         const data = response.data;
         setLocation(data.address);
-        setLocationCode(data.point_code);
-        setLocationName(data.point_name);
+        setLocationCode(data.pointCode);
+        setLocationName(data.pointName);
         setCoordinates({ lat: data.latitude, lon: data.longitude });
       })
       .catch(error => console.error('Error fetching location data:', error));
@@ -84,8 +84,8 @@ function UpdateLocationForm() {
     }
     try {
       const response = await axios.put(`http://localhost:8080/api/locations/${id}`, {
-        point_code: locationCode,
-        point_name: locationName,
+        pointCode: locationCode,
+        pointName: locationName,
         address: location,
         longitude: coordinates.lon,
         latitude: coordinates.lat,

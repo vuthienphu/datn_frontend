@@ -54,7 +54,7 @@ const Route = () => {
     const location = locations.find(loc => loc.id === selectedOption.value);
     if (location) {
       setPoints(points.map(point => 
-        point.id === id ? { ...point, name: location.point_name, location: location.address } : point
+        point.id === id ? { ...point, name: location.pointName, location: location.address } : point
       ));
     }
   };
@@ -73,8 +73,8 @@ const Route = () => {
   const handleFindRoute = async () => {
     const coordinates = points
       .map(point => {
-        const location = locations.find(loc => loc.point_name === point.name);
-        return location ? [location.longitude, location.latitude] : null;
+        const location = locations.find(loc => loc.pointName === point.name);
+        return location ? location.pointCode : null;
       })
       .filter(coord => coord !== null);
 
@@ -83,24 +83,54 @@ const Route = () => {
       return;
     }
 
-    try {
-      const response = await fetch('http://localhost:8080/api/distance-matrix', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ coordinates }),
-      });
+    const distancematrixCoordinates = points
+      .map(point => {
+        const location = locations.find(loc => loc.pointName === point.name);
+        return location ? location.pointCode : null;
+      })
+      .filter(coord => coord !== null);
 
-      if (!response.ok) {
+    if (distancematrixCoordinates.length < 2) {
+      alert('Vui lòng chọn ít nhất 2 điểm để tính khoảng cách');
+      return;
+    }
+
+    try {
+      // Gửi cả hai yêu cầu đồng thời
+      const [routeResponse, distanceResponse] = await Promise.all([
+        fetch('http://localhost:8080/api/route', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ routeCode, coordinates }),
+        }),
+        fetch('http://localhost:8080/api/distance-matrix', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ routeCode, distancematrixCoordinates }),
+        }),
+      ]);
+
+      // Kiểm tra phản hồi từ yêu cầu tìm đường
+      if (!routeResponse.ok) {
         throw new Error('Không thể tìm được đường đi');
       }
+      const routeResult = await routeResponse.json();
+      console.log('Kết quả tìm đường:', routeResult);
 
-      const result = await response.json();
-      console.log('Kết quả tìm đường:', result);
+      // Kiểm tra phản hồi từ yêu cầu tính khoảng cách
+      if (!distanceResponse.ok) {
+        throw new Error('Không thể tính toán khoảng cách');
+      }
+      const distanceResult = await distanceResponse.json();
+      console.log('Kết quả khoảng cách:', distanceResult);
+
     } catch (error) {
-      console.error('Lỗi khi tìm đường:', error);
-      alert('Có lỗi xảy ra khi tìm đường');
+      console.error('Lỗi khi gửi yêu cầu:', error);
+      alert('Có lỗi xảy ra khi gửi yêu cầu');
     }
   };
   const handleSaveRoute = () => {
@@ -138,9 +168,9 @@ const Route = () => {
             <tr key={point.id}>
               <td>
                 <Select
-                  value={locations.find(loc => loc.point_name === point.name) ? { value: locations.find(loc => loc.point_name === point.name).id, label: point.name } : null}
+                  value={locations.find(loc => loc.pointName === point.name) ? { value: locations.find(loc => loc.pointName === point.name).id, label: point.name } : null}
                   onChange={(selectedOption) => handlePointNameChange(point.id, selectedOption)}
-                  options={locations.map(location => ({ value: location.id, label: location.point_name }))}
+                  options={locations.map(location => ({ value: location.id, label: location.pointName }))}
                   className="location-select"
                   placeholder="Chọn điểm"
                   styles={customStyles}
