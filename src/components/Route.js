@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import {defaultCustomMarkerIcon} from './MapUtils';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import { defaultCustomMarkerIcon,startIcon } from './MapUtils';
 import 'leaflet/dist/leaflet.css';
 import { FaTimes } from 'react-icons/fa';
 import '../assets/styles/Route.css';
 import Select from 'react-select';
+import L from 'leaflet';  
 
 const customStyles = {
   menu: (provided) => ({
@@ -20,16 +21,34 @@ const customStyles = {
     ...provided,
     minWidth: 200, // Đảm bảo đủ rộng để hiển thị tên
   }),
+  control: (provided) => ({
+    ...provided,
+    minWidth: 200, // Đảm bảo đủ rộng để hiển thị tên
+  }),
 };
 
 const Route = () => {
   const [points, setPoints] = useState([]); // Điểm đã chọn
   const [locations, setLocations] = useState([]); // Danh sách tất cả các địa điểm từ API
   const [routeCode, setRouteCode] = useState(''); // Mã tuyến
+  const [optimizedRoute, setOptimizedRoute] = useState([]); // Đường tối ưu
+
   // Fetch danh sách locations từ API
   useEffect(() => {
     fetchLocations();
   }, []);
+
+  useEffect(() => {
+    console.log('optimizedRoute:', optimizedRoute);
+    console.log('locations:', locations);
+    console.log(
+      'Coordinates:',
+      getCoordinatesFromOptimizedRoute(optimizedRoute, locations)
+    );
+  }, [optimizedRoute, locations]);
+
+  console.log('optimizedRoute:', optimizedRoute);
+console.log('locations:', locations);
 
   const fetchLocations = async () => {
     try {
@@ -43,6 +62,13 @@ const Route = () => {
       console.error('Error fetching locations:', error);
     }
   };
+  const getArrowIcon = (rotationAngle) => {
+    return new L.DivIcon({
+      className: 'leaflet-arrow-icon',
+      html: `<div style="transform: rotate(${rotationAngle}deg); width: 20px; height: 20px; border: solid 2px black; border-width: 0 2px 2px 0; display: inline-block; margin-left: 10px;"></div>`,
+      iconSize: [20, 20],
+    });
+  };
 
   // Xử lý thêm điểm mới
   const handleAddPoint = () => {
@@ -53,7 +79,7 @@ const Route = () => {
   const handlePointNameChange = (id, selectedOption) => {
     const location = locations.find(loc => loc.id === selectedOption.value);
     if (location) {
-      setPoints(points.map(point => 
+      setPoints(points.map(point =>
         point.id === id ? { ...point, name: location.pointName, location: location.address } : point
       ));
     }
@@ -95,9 +121,21 @@ const Route = () => {
       return;
     }
 
+    const optimizeRouteCoordinates = points
+      .map(point => {
+        const location = locations.find(loc => loc.pointName === point.name);
+        return location ? location.pointCode : null;
+      })
+      .filter(coord => coord !== null);
+
+    if (optimizeRouteCoordinates.length < 2) {
+      alert('Vui lòng chọn ít nhất 2 điểm để tìm đường tối ưu');
+      return;
+    }
+
     try {
       // Gửi cả hai yêu cầu đồng thời
-      const [routeResponse, distanceResponse] = await Promise.all([
+      const [routeResponse, distanceResponse, optimizeRouteResponse] = await Promise.all([
         fetch('http://localhost:8080/api/route', {
           method: 'POST',
           headers: {
@@ -111,6 +149,13 @@ const Route = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ routeCode, distancematrixCoordinates }),
+        }),
+        fetch('http://localhost:8080/api/route/optimize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ routeCode, optimizeRouteCoordinates }),
         }),
       ]);
 
@@ -128,11 +173,31 @@ const Route = () => {
       const distanceResult = await distanceResponse.json();
       console.log('Kết quả khoảng cách:', distanceResult);
 
+      // Kiểm tra phản hồi từ yêu cầu tìm đường đi tối ưu
+      if (!optimizeRouteResponse.ok) {
+        throw new Error('Không thể tìm đường đi tối ưu');
+      }
+      const optimizeRouteResult = await optimizeRouteResponse.json();
+      console.log('Kết quả tìm đường tối ưu:', optimizeRouteResult);
+
+      if (optimizeRouteResult && optimizeRouteResult.length > 0) {
+        setOptimizedRoute(optimizeRouteResult);
+      } else {
+        console.error('Dữ liệu tối ưu không hợp lệ hoặc rỗng:', optimizeRouteResult);
+      }
+
+      console.log('optimizedRoute:', optimizedRoute);
+  console.log('locations:', locations);
+  console.log(
+    'Coordinates:',
+    getCoordinatesFromOptimizedRoute(optimizedRoute, locations)
+  );
     } catch (error) {
       console.error('Lỗi khi gửi yêu cầu:', error);
       alert('Có lỗi xảy ra khi gửi yêu cầu');
     }
   };
+
   const handleSaveRoute = () => {
     if (!routeCode) {
       alert('Vui lòng nhập mã tuyến');
@@ -141,66 +206,139 @@ const Route = () => {
     // Logic để lưu tuyến đi
     console.log('Lưu tuyến đi với mã:', routeCode, 'và các điểm:', points);
   };
-
+  const getCoordinatesFromOptimizedRoute = (route, allLocations) => {
+    return route
+      .map((pointCode) => {
+        const location = allLocations.find((loc) => loc.pointCode === pointCode);
+        return location ? [location.latitude, location.longitude] : null;
+      })
+      .filter((pos) => pos !== null); // Lọc bỏ các điểm không hợp lệ
+  };
   return (
-    <div className="route-container">
-      <div className="route-code-input">
-        <label htmlFor="routeCode">Mã tuyến:</label>
-        <input
-          type="text"
-          id="routeCode"
-          value={routeCode}
-          onChange={(e) => setRouteCode(e.target.value)}
-          placeholder="Nhập mã tuyến"
-        />
-      </div>
+    <>
+      <div className="route-container">
+        <div className="route-code-input">
+          <label htmlFor="routeCode">Mã tuyến:</label>
+          <input
+            type="text"
+            id="routeCode"
+            value={routeCode}
+            onChange={(e) => setRouteCode(e.target.value)}
+            placeholder="Nhập mã tuyến"
+          />
+        </div>
 
-      <table className="points-table">
-        <thead>
-          <tr>
-            <th>Tên điểm</th>
-            <th>Địa điểm</th>
-            <th>Xóa</th>
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((point) => (
-            <tr key={point.id}>
-              <td>
-                <Select
-                  value={locations.find(loc => loc.pointName === point.name) ? { value: locations.find(loc => loc.pointName === point.name).id, label: point.name } : null}
-                  onChange={(selectedOption) => handlePointNameChange(point.id, selectedOption)}
-                  options={locations.map(location => ({ value: location.id, label: location.pointName }))}
-                  className="location-select"
-                  placeholder="Chọn điểm"
-                  styles={customStyles}
-                />
-              </td>
-              <td>{point.location}</td>
-              <td>
-                <button 
-                  onClick={() => handleDeletePoint(point.id)}
-                  className="delete-btn"
-                >
-                  <FaTimes />
-                </button>
-              </td>
+        <table className="points-table">
+          <thead>
+            <tr>
+              <th>Tên điểm</th>
+              <th>Địa điểm</th>
+              <th>Xóa</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {points.map((point) => (
+              <tr key={point.id}>
+                <td>
+                  <Select
+                    value={locations.find(loc => loc.pointName === point.name) ? { value: locations.find(loc => loc.pointName === point.name).id, label: point.name } : null}
+                    onChange={(selectedOption) => handlePointNameChange(point.id, selectedOption)}
+                    options={locations.map(location => ({ value: location.id, label: location.pointName }))}
+                    className="location-select"
+                    placeholder="Chọn điểm"
+                    styles={customStyles}
+                  />
+                </td>
+                <td>{point.location}</td>
+                <td>
+                  <button 
+                    onClick={() => handleDeletePoint(point.id)}
+                    className="delete-btn"
+                  >
+                    <FaTimes />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-      <div className="button-group">
-        <button onClick={handleAddPoint}>Thêm điểm</button>
-        <button onClick={handleDeleteAll}>Xóa tất cả</button>
-        <button onClick={handleFindRoute} disabled={points.length < 2}>
-          Tìm đường
-        </button>
-        <button onClick={handleSaveRoute}>Lưu tuyến đi</button>
+        <div className="button-group">
+          <button onClick={handleAddPoint}>Thêm điểm</button>
+          <button onClick={handleDeleteAll}>Xóa tất cả</button>
+          <button onClick={handleFindRoute} disabled={points.length < 2}>
+            Tìm đường
+          </button>
+          <button onClick={handleSaveRoute}>Lưu tuyến đi</button>
+        </div>
       </div>
-    </div>
+      <div className="map-container">
+      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }}>
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
+          />
+
+          {/* Hiển thị điểm xuất phát */}
+          {optimizedRoute.length > 0 && locations.length > 0 && (
+            (() => {
+              const startLocation = locations.find(
+                (loc) => loc.pointCode === optimizedRoute[0]
+              );
+              if (startLocation) {
+                return (
+                  <Marker
+                    position={[startLocation.latitude, startLocation.longitude]}
+                    icon={startIcon}
+                  >
+                    <Popup>
+                      <strong>Điểm xuất phát:</strong> {startLocation.pointName}
+                    </Popup>
+                  </Marker>
+                );
+              }
+              return null;
+            })()
+          )}
+
+          {/* Hiển thị các điểm còn lại với mũi tên */}
+          {optimizedRoute.map((pointCode, index) => {
+            if (index === 0) return null; // Bỏ qua điểm xuất phát (đã được xử lý riêng)
+            const location = locations.find((loc) => loc.pointCode === pointCode);
+            if (location) {
+              const prevLocation = locations.find(
+                (loc) => loc.pointCode === optimizedRoute[index - 1]
+              );
+              const angle = prevLocation
+                ? Math.atan2(
+                    location.latitude - prevLocation.latitude,
+                    location.longitude - prevLocation.longitude
+                  ) * (180 / Math.PI)
+                : 0;
+              return (
+                <Marker
+                  key={index}
+                  position={[location.latitude, location.longitude]}
+                  icon={getArrowIcon(angle)} // Hiển thị mũi tên chỉ hướng
+                >
+                  <Popup>{location.pointName}</Popup>
+                </Marker>
+              );
+            }
+            return null;
+          })}
+
+          {/* Vẽ tuyến đường tối ưu */}
+          {getCoordinatesFromOptimizedRoute(optimizedRoute, locations).length > 1 && (
+            <Polyline
+              positions={getCoordinatesFromOptimizedRoute(optimizedRoute, locations)}
+              color="blue"
+            />
+          )}
+        </MapContainer>
+</div>
+    </>
   );
 };
 
 export default Route;
-
