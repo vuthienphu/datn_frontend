@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef} from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import { defaultCustomMarkerIcon,startIcon } from './MapUtils';
 import 'leaflet/dist/leaflet.css';
@@ -6,6 +6,7 @@ import { FaTimes } from 'react-icons/fa';
 import '../assets/styles/Route.css';
 import Select from 'react-select';
 import L from 'leaflet';  
+import 'leaflet-arrowheads'; 
 
 const customStyles = {
   menu: (provided) => ({
@@ -21,10 +22,6 @@ const customStyles = {
     ...provided,
     minWidth: 200, // Đảm bảo đủ rộng để hiển thị tên
   }),
-  control: (provided) => ({
-    ...provided,
-    minWidth: 200, // Đảm bảo đủ rộng để hiển thị tên
-  }),
 };
 
 const Route = () => {
@@ -32,23 +29,25 @@ const Route = () => {
   const [locations, setLocations] = useState([]); // Danh sách tất cả các địa điểm từ API
   const [routeCode, setRouteCode] = useState(''); // Mã tuyến
   const [optimizedRoute, setOptimizedRoute] = useState([]); // Đường tối ưu
-
+  const polylineRef = useRef(null); 
   // Fetch danh sách locations từ API
   useEffect(() => {
     fetchLocations();
   }, []);
 
-  useEffect(() => {
-    console.log('optimizedRoute:', optimizedRoute);
-    console.log('locations:', locations);
-    console.log(
-      'Coordinates:',
-      getCoordinatesFromOptimizedRoute(optimizedRoute, locations)
-    );
-  }, [optimizedRoute, locations]);
+ 
 
-  console.log('optimizedRoute:', optimizedRoute);
-console.log('locations:', locations);
+  useEffect(() => {
+    if (polylineRef.current) {
+      polylineRef.current.arrowheads({
+        size: '20px', // Độ lớn của mũi tên
+        frequency: '200px', // Tần suất xuất hiện mũi tên
+        fill: true,
+      });
+    }
+  }, [optimizedRoute, locations]); // Kích hoạt lại khi tuyến đường hoặc vị trí 
+
+
 
   const fetchLocations = async () => {
     try {
@@ -62,13 +61,7 @@ console.log('locations:', locations);
       console.error('Error fetching locations:', error);
     }
   };
-  const getArrowIcon = (rotationAngle) => {
-    return new L.DivIcon({
-      className: 'leaflet-arrow-icon',
-      html: `<div style="transform: rotate(${rotationAngle}deg); width: 20px; height: 20px; border: solid 2px black; border-width: 0 2px 2px 0; display: inline-block; margin-left: 10px;"></div>`,
-      iconSize: [20, 20],
-    });
-  };
+ 
 
   // Xử lý thêm điểm mới
   const handleAddPoint = () => {
@@ -198,14 +191,7 @@ console.log('locations:', locations);
     }
   };
 
-  const handleSaveRoute = () => {
-    if (!routeCode) {
-      alert('Vui lòng nhập mã tuyến');
-      return;
-    }
-    // Logic để lưu tuyến đi
-    console.log('Lưu tuyến đi với mã:', routeCode, 'và các điểm:', points);
-  };
+  
   const getCoordinatesFromOptimizedRoute = (route, allLocations) => {
     return route
       .map((pointCode) => {
@@ -269,73 +255,75 @@ console.log('locations:', locations);
           <button onClick={handleFindRoute} disabled={points.length < 2}>
             Tìm đường
           </button>
-          <button onClick={handleSaveRoute}>Lưu tuyến đi</button>
+         
         </div>
       </div>
       <div className="map-container">
       <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
+        />
+
+{optimizedRoute.length > 0 && locations.length > 0 && (
+  <>
+    {/* Hiển thị điểm xuất phát */}
+    {(() => {
+      const startLocation = locations.find(
+        (loc) => loc.pointCode === optimizedRoute[0] // Điểm đầu tiên của tuyến tối ưu
+      );
+      if (startLocation) {
+        return (
+          <Marker
+            position={[startLocation.latitude, startLocation.longitude]}
+            icon={startIcon} // Biểu tượng màu đỏ cho điểm xuất phát
+          >
+            <Popup>
+              <strong>Điểm xuất phát:</strong> {startLocation.pointName} <br />
+              <strong>Địa chỉ:</strong> {startLocation.address}
+            </Popup>
+          </Marker>
+        );
+      }
+      return null;
+    })()}
+
+    {/* Hiển thị các điểm còn lại */}
+    {optimizedRoute.slice(1).map((pointCode, index) => {
+      const location = locations.find((loc) => loc.pointCode === pointCode);
+      if (location) {
+        return (
+          <Marker
+            key={index}
+            position={[location.latitude, location.longitude]}
+            icon={defaultCustomMarkerIcon} // Biểu tượng mặc định cho các điểm khác
+          >
+            <Popup>
+              <strong>Tên điểm:</strong> {location.pointName} <br />
+              <strong>Địa chỉ:</strong> {location.address}
+            </Popup>
+          </Marker>
+        );
+      }
+      return null;
+    })}
+  </>
+)}
+
+
+
+        {/* Vẽ tuyến đường tối ưu */}
+        {getCoordinatesFromOptimizedRoute(optimizedRoute, locations).length > 1 && (
+          <Polyline
+          ref={polylineRef} // Thêm ref để truy cập Polyline
+          positions={getCoordinatesFromOptimizedRoute(optimizedRoute, locations)}
+          color="blue"
           />
+        )}
 
-          {/* Hiển thị điểm xuất phát */}
-          {optimizedRoute.length > 0 && locations.length > 0 && (
-            (() => {
-              const startLocation = locations.find(
-                (loc) => loc.pointCode === optimizedRoute[0]
-              );
-              if (startLocation) {
-                return (
-                  <Marker
-                    position={[startLocation.latitude, startLocation.longitude]}
-                    icon={startIcon}
-                  >
-                    <Popup>
-                      <strong>Điểm xuất phát:</strong> {startLocation.pointName}
-                    </Popup>
-                  </Marker>
-                );
-              }
-              return null;
-            })()
-          )}
-
-          {/* Hiển thị các điểm còn lại với mũi tên */}
-          {optimizedRoute.map((pointCode, index) => {
-            if (index === 0) return null; // Bỏ qua điểm xuất phát (đã được xử lý riêng)
-            const location = locations.find((loc) => loc.pointCode === pointCode);
-            if (location) {
-              const prevLocation = locations.find(
-                (loc) => loc.pointCode === optimizedRoute[index - 1]
-              );
-              const angle = prevLocation
-                ? Math.atan2(
-                    location.latitude - prevLocation.latitude,
-                    location.longitude - prevLocation.longitude
-                  ) * (180 / Math.PI)
-                : 0;
-              return (
-                <Marker
-                  key={index}
-                  position={[location.latitude, location.longitude]}
-                  icon={getArrowIcon(angle)} // Hiển thị mũi tên chỉ hướng
-                >
-                  <Popup>{location.pointName}</Popup>
-                </Marker>
-              );
-            }
-            return null;
-          })}
-
-          {/* Vẽ tuyến đường tối ưu */}
-          {getCoordinatesFromOptimizedRoute(optimizedRoute, locations).length > 1 && (
-            <Polyline
-              positions={getCoordinatesFromOptimizedRoute(optimizedRoute, locations)}
-              color="blue"
-            />
-          )}
-        </MapContainer>
+       
+      </MapContainer>
+   
 </div>
     </>
   );

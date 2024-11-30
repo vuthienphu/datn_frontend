@@ -81,3 +81,13 @@
     background-color: #0056b3;
   }
 
+  .custom-start-icon .start-marker {
+    background-color: red; /* Màu nền */
+    color: white; /* Màu chữ */
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.3);
+  }
+  
