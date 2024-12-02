@@ -127,7 +127,7 @@ const Route = () => {
     }
 
     try {
-      // Gửi cả hai yêu cầu đồng thời
+      // Gửi cả ba yêu cầu đồng thời
       const [routeResponse, distanceResponse, optimizeRouteResponse] = await Promise.all([
         fetch('http://localhost:8080/api/route', {
           method: 'POST',

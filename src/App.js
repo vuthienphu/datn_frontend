@@ -9,6 +9,8 @@ import ConfigForm from './components/ConfigForm';
 import ConfigTable from './components/ConfigTable';
 import './App.css'
 import UpdateLocationForm from './components/UpdateLocationForm';
+import RouteManager from './components/RouteManager';
+import RouteDetail from './components/RouteDetails';
 
 function App() {
   return (
@@ -23,7 +25,8 @@ function App() {
           <Route path="/config/config-form" element={<ConfigForm />} />
           <Route path="/config" element={<ConfigTable />} />
           <Route path="/config/:id" element={<ConfigTable />} /> {/* Add this line */}
-
+          <Route path="/route/manager" element={<RouteManager />} />
+          <Route path="/route/manager/:routeCode" element={<RouteDetail />} />
         </Routes>
       </div>
     </Router>

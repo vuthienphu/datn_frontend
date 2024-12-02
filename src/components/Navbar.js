@@ -11,8 +11,8 @@ const Navbar = () => {
         <Link to="/" className="dropbtn">Quản lý tuyến đường</Link>
         <div className="dropdown-content">
             <Link to="/">Lộ trình</Link>
-            <Link to="/route">Tạo tuyến</Link>
-            <Link to="/route/manage">Quản lý tuyến</Link>
+        
+            <Link to="/route/manager">Quản lý tuyến</Link>
           </div>
         </div>
         <div className="dropdown">
