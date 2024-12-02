@@ -1,6 +1,7 @@
 import React, { useEffect, useState,useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
+import '../assets/styles/RouteManager.css';
 const customStyles = {
   menu: (provided) => ({
     ...provided,
@@ -21,6 +22,8 @@ const RouteManager = () => {
   const [locations, setLocations] = useState([]); // Danh sách tất cả các địa điểm từ API
   const [selectRouteCode, setSelectRouteCode] = useState(null); // Mã tuyến
   const [routeCodes, setRouteCodes] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteSuccessMessage, setDeleteSuccessMessage] = useState(''); // Thêm state cho thông báo xóa
   const navigate = useNavigate(); // Thêm state để lưu trữ mã tuyến
 
   const polylineRef = useRef(null); 
@@ -57,6 +60,19 @@ const RouteManager = () => {
       console.error('Error fetching locations:', error);
     }
   };
+
+  // Mở modal xác nhận xóa
+  const openDeleteModal = (selectRouteCode) => {
+    setSelectRouteCode(selectRouteCode);
+    setIsModalOpen(true);
+  };
+
+  // Đóng modal
+  const closeDeleteModal = () => {
+    setIsModalOpen(false);
+    setSelectRouteCode(null);
+  };
+
   const handleViewRoute = () => {
     if (selectRouteCode) {
       navigate(`/route/manager/${selectRouteCode}`); // Sử dụng navigate để chuyển hướng
@@ -65,19 +81,34 @@ const RouteManager = () => {
     }
   };
 
-  function handleDeleteButtonClick(routeCode) {
-    deleteRoute(routeCode);
+  function handleDeleteButtonClick() {
+    if (selectRouteCode) {
+      openDeleteModal(selectRouteCode); // Mở modal với mã tuyến đã chọn
+    } else {
+      console.log('Vui lòng chọn mã tuyến trước khi xóa.'); // Thông báo nếu không có mã tuyến được chọn
+    }
+    
   }
   function deleteRoute(routeCode) {
     const url = `http://localhost:8080/api/route/${routeCode}`;
-    
+    closeDeleteModal();
     fetch(url, {
         method: 'DELETE',
     })
     .then(response => {
         if (response.ok) {
             console.log('Route deleted successfully');
-            // Cập nhật giao diện người dùng nếu cần
+            // Thông báo xóa thành công
+           
+            
+            // Cập nhật danh sách routeCodes để loại bỏ mã tuyến đã xóa
+            setRouteCodes(prevRouteCodes => prevRouteCodes.filter(code => code !== routeCode));
+
+            // Đặt lại selectRouteCode để không còn hiển thị mã tuyến đã xóa
+            setSelectRouteCode(null);
+
+            setDeleteSuccessMessage('Xóa tuyến đường thành công!');
+          setTimeout(() => setDeleteSuccessMessage(''), 3000); // Ẩn thông báo sau 3 giây
         } else {
             console.error('Error deleting route:', response.statusText);
         }
@@ -93,14 +124,39 @@ const RouteManager = () => {
         placeholder="Chọn mã tuyến"
         className="route-code-select"
         styles={customStyles}
-        onChange={(selectedOption) => setSelectRouteCode(selectedOption.value)}
+        value={selectRouteCode ? { value: selectRouteCode, label: selectRouteCode } : null} // Hiển thị giá trị đã chọn
+        onChange={(selectedOption) => setSelectRouteCode(selectedOption ? selectedOption.value : null)}
       />
       <button onClick={handleViewRoute} className="view-route-button">
         Xem tuyến đường
       </button>
-      <button onClick={() => handleDeleteButtonClick(selectRouteCode)}>
+      <button onClick={handleDeleteButtonClick}>
         Xóa Tuyến Đường
       </button>
+       {/* Modal xác nhận xóa */}
+       {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Xác nhận xóa</h3>
+            <p>Bạn có chắc chắn muốn xóa mục này không?</p>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={closeDeleteModal}>
+                Hủy
+              </button>
+              <button className="confirm-button" onClick={() => deleteRoute(selectRouteCode)}>
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+        
+      )}
+      {/* Hiển thị thông báo xóa thành công */}
+      {deleteSuccessMessage && (
+        <div className="success-message">
+          {deleteSuccessMessage}
+        </div>
+      )}
     </>
   );
 };
