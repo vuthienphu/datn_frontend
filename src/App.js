@@ -11,6 +11,7 @@ import './App.css'
 import UpdateLocationForm from './components/UpdateLocationForm';
 import RouteManager from './components/RouteManager';
 import RouteDetail from './components/RouteDetails';
+import EditRouteDetails from './components/EditRouteDetails';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/config/:id" element={<ConfigTable />} /> {/* Add this line */}
           <Route path="/route/manager" element={<RouteManager />} />
           <Route path="/route/manager/:routeCode" element={<RouteDetail />} />
+          <Route path="/route/manager/edit/:routeCodeEdit" element={<EditRouteDetails />} />
         </Routes>
       </div>
     </Router>

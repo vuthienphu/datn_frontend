@@ -81,6 +81,15 @@ const RouteManager = () => {
     }
   };
 
+  const handleEditRoute = () => {
+    if (selectRouteCode) {
+      navigate(`/route/manager/edit/${selectRouteCode}`); // Sử dụng navigate để chuyển hướng
+    } else {
+      console.log('Vui lòng chọn mã tuyến trước khi xem.');
+    }
+  };
+
+
   function handleDeleteButtonClick() {
     if (selectRouteCode) {
       openDeleteModal(selectRouteCode); // Mở modal với mã tuyến đã chọn
@@ -132,6 +141,9 @@ const RouteManager = () => {
       </button>
       <button onClick={handleDeleteButtonClick}>
         Xóa Tuyến Đường
+      </button>
+      <button onClick={handleEditRoute} className="edit-route-button">
+       Sửu tuyến đường
       </button>
        {/* Modal xác nhận xóa */}
        {isModalOpen && (

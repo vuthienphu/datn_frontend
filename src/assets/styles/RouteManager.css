@@ -19,6 +19,7 @@ button {
   border: none; /* Không có viền */
   padding: 10px 20px; /* Padding cho nút */
   cursor: pointer; /* Con trỏ khi hover */
+  margin-right: 10px; /* Khoảng cách bên phải cho tất cả các nút */
 }
 
 .modal-overlay {
@@ -72,3 +73,14 @@ button {
     border-radius: 5px;
     text-align: center;
   }
+
+  /* Nút sửa tuyến đường */
+  .edit-route-button {
+    background-color: #2196F3; /* Màu nền xanh dương */
+    color: white; /* Màu chữ trắng */
+    border: none; /* Không có viền */
+    padding: 10px 20px; /* Padding cho nút */
+    cursor: pointer; /* Con trỏ khi hover */
+  }
+
+  
