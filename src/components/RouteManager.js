@@ -5,14 +5,14 @@ import '../assets/styles/RouteManager.css';
 const customStyles = {
   menu: (provided) => ({
     ...provided,
-    maxHeight: 100,
+    maxHeight: 144,
   }),
   menuList: (provided) => ({
     ...provided,
-    maxHeight: 100,
+    maxHeight: 144,
     overflowY: 'auto',
     '&::-webkit-scrollbar': {
-      width: '8px',  // Độ rộng của thanh cuộn
+      width: '12px',  // Độ rộng của thanh cuộn
     },
     '&::-webkit-scrollbar-track': {
       background: '#f1f1f1',  // Màu nền của track

@@ -11,14 +11,14 @@ import 'leaflet-arrowheads';
 const customStyles = {
   menu: (provided) => ({
     ...provided,
-    maxHeight: 100,
+    maxHeight: 144,
   }),
   menuList: (provided) => ({
     ...provided,
-    maxHeight: 100,
+    maxHeight: 144,
     overflowY: 'auto',
     '&::-webkit-scrollbar': {
-      width: '8px',  // Độ rộng của thanh cuộn
+      width: '12px',  // Độ rộng của thanh cuộn
     },
     '&::-webkit-scrollbar-track': {
       background: '#f1f1f1',  // Màu nền của track
@@ -53,6 +53,7 @@ const Route = () => {
   const [actualRouteCoordinates, setActualRouteCoordinates] = useState([]); // Tọa độ tuyến đường thực tế
   const polylineRef = useRef(null); 
   const [polylineInstance, setPolylineInstance] = useState(null);
+  const mapRef = useRef(null);
   // Fetch danh sách locations từ API
   useEffect(() => {
     fetchLocations();
@@ -72,47 +73,64 @@ const Route = () => {
   */
 
   useEffect(() => {
-    if (polylineRef.current && actualRouteCoordinates.length > 1) {
-      // Xóa polyline cũ nếu có
+    if (!polylineRef.current || actualRouteCoordinates.length < 2) return;
+
+  const map = polylineRef.current._map;
+  if (!map) return;
+
+  // Tạo polyline mới
+  const newPolyline = L.polyline(actualRouteCoordinates, {
+    color: 'blue',
+    weight: 3,
+    opacity: 0.8
+  }).addTo(map);
+
+  // Thêm mũi tên
+  newPolyline.arrowheads({
+    size: '15px',
+    frequency: '100px',
+    fill: true,
+    yawn: 40
+  });
+
+  setPolylineInstance(newPolyline);
+
+  // Cleanup function
+  return () => {
+    try {
+      if (newPolyline) {
+        // Kiểm tra và xóa arrowheads nếu có
+        if (newPolyline.arrowheads) {
+          newPolyline.arrowheads().remove();
+        }
+        // Kiểm tra map trước khi xóa layer
+        if (map && map.hasLayer(newPolyline)) {
+          map.removeLayer(newPolyline);
+        }
+      }
+    } catch (error) {
+      console.error('Error in cleanup:', error);
+    }
+  };
+}, [actualRouteCoordinates]);
+
+useEffect(() => {
+  // Cleanup khi component unmount
+  return () => {
+    try {
       if (polylineInstance) {
         if (polylineInstance.arrowheads) {
           polylineInstance.arrowheads().remove();
         }
-        polylineRef.current._map.removeLayer(polylineInstance);
-      }
-  
-      // Tạo polyline mới
-      const newPolyline = L.polyline(actualRouteCoordinates, {
-        color: 'blue',
-        weight: 3,
-        opacity: 0.8,
-        smoothFactor: 1
-      });
-  
-      // Thêm vào map
-      newPolyline.addTo(polylineRef.current._map);
-  
-      // Thêm mũi tên
-      newPolyline.arrowheads({
-        size: '15px',
-        frequency: '50px',
-        fill: true,
-        yawn: 40,
-        offsets: { end: 0 }
-      });
-  
-      // Lưu instance mới
-      setPolylineInstance(newPolyline);
-  
-      // Cleanup
-      return () => {
-        if (newPolyline.arrowheads) {
-          newPolyline.arrowheads().remove();
+        if (polylineRef.current && polylineRef.current._map) {
+          polylineRef.current._map.removeLayer(polylineInstance);
         }
-        polylineRef.current._map.removeLayer(newPolyline);
-      };
+      }
+    } catch (error) {
+      console.error('Error in component cleanup:', error);
     }
-  }, [actualRouteCoordinates]);
+  };
+}, []);
   
   const fetchLocations = async () => {
     try {
@@ -369,7 +387,9 @@ const Route = () => {
         </div>
       </div>
       <div className="map-container">
-      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }} ref={polylineRef}>
+      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }} whenCreated={(map) => {
+    mapRef.current = map;
+  }} ref={polylineRef}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
