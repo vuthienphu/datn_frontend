@@ -5,16 +5,37 @@ import '../assets/styles/RouteManager.css';
 const customStyles = {
   menu: (provided) => ({
     ...provided,
-    maxHeight: 100, // Giới hạn chiều cao của menu
-    overflowY: 'auto', // Thêm thanh cuộn dọc
+    maxHeight: 100,
+  }),
+  menuList: (provided) => ({
+    ...provided,
+    maxHeight: 100,
+    overflowY: 'auto',
+    '&::-webkit-scrollbar': {
+      width: '8px',  // Độ rộng của thanh cuộn
+    },
+    '&::-webkit-scrollbar-track': {
+      background: '#f1f1f1',  // Màu nền của track
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: '#888',  // Màu của thanh cuộn
+      borderRadius: '3px', // Bo tròn góc thanh cuộn
+    },
+    '&::-webkit-scrollbar-thumb:hover': {
+      background: '#555',  // Màu khi hover
+    },
   }),
   option: (provided) => ({
     ...provided,
-    whiteSpace: 'nowrap', // Ngăn chặn xuống dòng
+    whiteSpace: 'nowrap',
   }),
   control: (provided) => ({
     ...provided,
-    minWidth: 200, // Đảm bảo đủ rộng để hiển thị tên
+    minWidth: 200,
+  }),
+  container: (provided) => ({
+    ...provided,
+    width: '100%',
   }),
 };
 

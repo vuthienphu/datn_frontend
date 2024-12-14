@@ -11,16 +11,37 @@ import 'leaflet-arrowheads';
 const customStyles = {
   menu: (provided) => ({
     ...provided,
-    maxHeight: 100, // Giới hạn chiều cao của menu
-    overflowY: 'auto', // Thêm thanh cuộn dọc
+    maxHeight: 100,
+  }),
+  menuList: (provided) => ({
+    ...provided,
+    maxHeight: 100,
+    overflowY: 'auto',
+    '&::-webkit-scrollbar': {
+      width: '8px',  // Độ rộng của thanh cuộn
+    },
+    '&::-webkit-scrollbar-track': {
+      background: '#f1f1f1',  // Màu nền của track
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: '#888',  // Màu của thanh cuộn
+      borderRadius: '3px', // Bo tròn góc thanh cuộn
+    },
+    '&::-webkit-scrollbar-thumb:hover': {
+      background: '#555',  // Màu khi hover
+    },
   }),
   option: (provided) => ({
     ...provided,
-    whiteSpace: 'nowrap', // Ngăn chặn xuống dòng
+    whiteSpace: 'nowrap',
   }),
   control: (provided) => ({
     ...provided,
-    minWidth: 200, // Đảm bảo đủ rộng để hiển thị tên
+    minWidth: 200,
+  }),
+  container: (provided) => ({
+    ...provided,
+    width: '100%',
   }),
 };
 
@@ -29,14 +50,16 @@ const Route = () => {
   const [locations, setLocations] = useState([]); // Danh sách tất cả các địa điểm từ API
   const [routeCode, setRouteCode] = useState(''); // Mã tuyến
   const [optimizedRoute, setOptimizedRoute] = useState([]); // Đường tối ưu
+  const [actualRouteCoordinates, setActualRouteCoordinates] = useState([]); // Tọa độ tuyến đường thực tế
   const polylineRef = useRef(null); 
+  const [polylineInstance, setPolylineInstance] = useState(null);
   // Fetch danh sách locations từ API
   useEffect(() => {
     fetchLocations();
   }, []);
 
  
-
+/*
   useEffect(() => {
     if (polylineRef.current) {
       polylineRef.current.arrowheads({
@@ -46,9 +69,51 @@ const Route = () => {
       });
     }
   }, [optimizedRoute, locations]); // Kích hoạt lại khi tuyến đường hoặc vị trí 
+  */
 
-
-
+  useEffect(() => {
+    if (polylineRef.current && actualRouteCoordinates.length > 1) {
+      // Xóa polyline cũ nếu có
+      if (polylineInstance) {
+        if (polylineInstance.arrowheads) {
+          polylineInstance.arrowheads().remove();
+        }
+        polylineRef.current._map.removeLayer(polylineInstance);
+      }
+  
+      // Tạo polyline mới
+      const newPolyline = L.polyline(actualRouteCoordinates, {
+        color: 'blue',
+        weight: 3,
+        opacity: 0.8,
+        smoothFactor: 1
+      });
+  
+      // Thêm vào map
+      newPolyline.addTo(polylineRef.current._map);
+  
+      // Thêm mũi tên
+      newPolyline.arrowheads({
+        size: '15px',
+        frequency: '50px',
+        fill: true,
+        yawn: 40,
+        offsets: { end: 0 }
+      });
+  
+      // Lưu instance mới
+      setPolylineInstance(newPolyline);
+  
+      // Cleanup
+      return () => {
+        if (newPolyline.arrowheads) {
+          newPolyline.arrowheads().remove();
+        }
+        polylineRef.current._map.removeLayer(newPolyline);
+      };
+    }
+  }, [actualRouteCoordinates]);
+  
   const fetchLocations = async () => {
     try {
       const response = await fetch('http://localhost:8080/api/locations');
@@ -175,6 +240,14 @@ const Route = () => {
 
       if (optimizeRouteResult && optimizeRouteResult.length > 0) {
         setOptimizedRoute(optimizeRouteResult);
+        
+        // Lấy tọa độ của tuyến đường tối ưu
+        const coordinates = getCoordinatesFromOptimizedRoute(optimizeRouteResult, locations);
+        
+        // Lấy tuyến đường thực tế giữa các điểm
+        const actualRoute = await getActualRouteBetweenPoints(coordinates);
+        setActualRouteCoordinates(actualRoute);
+        console.log("actualRoute:",actualRoute);
       } else {
         console.error('Dữ liệu tối ưu không hợp lệ hoặc rỗng:', optimizeRouteResult);
       }
@@ -196,10 +269,47 @@ const Route = () => {
     return route
       .map((pointCode) => {
         const location = allLocations.find((loc) => loc.pointCode === pointCode);
+       
         return location ? [location.latitude, location.longitude] : null;
       })
       .filter((pos) => pos !== null); // Lọc bỏ các điểm không hợp lệ
   };
+
+  // Thêm hàm mới để lấy tuyến đường thực tế giữa các điểm
+  const getActualRouteBetweenPoints = async (coordinates) => {
+    try {
+      // Tạo mảng promises cho mỗi cặp điểm liên tiếp
+      const routePromises = [];
+      for (let i = 0; i < coordinates.length - 1; i++) {
+        const start = coordinates[i];
+        const end = coordinates[i + 1];
+        const coordinateString = `${start[1]},${start[0]};${end[1]},${end[0]}`;
+        
+        routePromises.push(
+          fetch(`http://router.project-osrm.org/route/v1/driving/${coordinateString}?overview=full&geometries=geojson`)
+            .then(response => response.json())
+        );
+      }
+
+      // Đợi tất cả các promises hoàn thành
+      const results = await Promise.all(routePromises);
+      
+      // Kết hợp tất cả các đoạn đường thành một mảng tọa độ duy nhất
+      let allCoordinates = [];
+      results.forEach(data => {
+        if (data.routes && data.routes[0] && data.routes[0].geometry) {
+          const segmentCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          allCoordinates = [...allCoordinates, ...segmentCoords];
+        }
+      });
+
+      return allCoordinates;
+    } catch (error) {
+      console.error('Error fetching actual route:', error);
+      return [];
+    }
+  };
+
   return (
     <>
       <div className="route-container">
@@ -259,7 +369,7 @@ const Route = () => {
         </div>
       </div>
       <div className="map-container">
-      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }}>
+      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }} ref={polylineRef}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
@@ -312,12 +422,22 @@ const Route = () => {
 
 
 
-        {/* Vẽ tuyến đường tối ưu */}
+      {/* Vẽ tuyến đường tối ưu
         {getCoordinatesFromOptimizedRoute(optimizedRoute, locations).length > 1 && (
           <Polyline
           ref={polylineRef} // Thêm ref để truy cập Polyline
           positions={getCoordinatesFromOptimizedRoute(optimizedRoute, locations)}
           color="blue"
+          />
+        )} */}
+
+        {/* Thay đổi cách hiển thị Polyline */}
+        {actualRouteCoordinates.length > 1 && (
+          <Polyline
+            ref={polylineRef}
+            positions={actualRouteCoordinates}
+            color="blue"
+            weight={3} // Độ dày của đường
           />
         )}
 
