@@ -10,7 +10,7 @@ const Navbar = () => {
         <div className="dropdown">
         <Link to="/" className="dropbtn">Quản lý tuyến đường</Link>
         <div className="dropdown-content">
-            <Link to="/">Lộ trình</Link>
+            <Link to="/route">Lộ trình</Link>
         
             <Link to="/route/manager">Quản lý tuyến</Link>
           </div>

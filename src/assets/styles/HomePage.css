@@ -1,0 +1,47 @@
+.home-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  .home-content {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .home-logo {
+    width: 200px;
+    height: auto;
+    margin-bottom: 2rem;
+  }
+  
+  .auth-buttons {
+    margin-top: 2rem;
+  }
+  
+  .auth-button {
+    display: inline-block;
+    padding: 12px 30px;
+    margin: 0 10px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+  
+  .login {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .register {
+    background-color: #2196F3;
+    color: white;
+  }
+  
+  .auth-button:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }

@@ -12,23 +12,35 @@ import UpdateLocationForm from './components/UpdateLocationForm';
 import RouteManager from './components/RouteManager';
 import RouteDetail from './components/RouteDetails';
 import EditRouteDetails from './components/EditRouteDetails';
+import HomePage from './components/HomePage';
+import Register from './components/Register';
+import Login from './components/Login';
 
 function App() {
   return (
     <Router>
       <div className='App'>
-        <Navbar />
         <Routes>
-          <Route path="/" element={<MapComponent />} />
-          <Route path="/location/location-search" element={<LocationSearch />} />
-          <Route path="/location" element={<LocationTable />} />
-          <Route path="/location/:id" element={<UpdateLocationForm />} /> {/* Add this line */}
-          <Route path="/config/config-form" element={<ConfigForm />} />
-          <Route path="/config" element={<ConfigTable />} />
-          <Route path="/config/:id" element={<ConfigTable />} /> {/* Add this line */}
-          <Route path="/route/manager" element={<RouteManager />} />
-          <Route path="/route/manager/:routeCode" element={<RouteDetail />} />
-          <Route path="/route/manager/edit/:routeCodeEdit" element={<EditRouteDetails />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/*" element={
+            <>
+              <Navbar />
+              <Routes>
+                <Route path="/route" element={<MapComponent />} />
+                <Route path="/location/location-search" element={<LocationSearch />} />
+                <Route path="/location" element={<LocationTable />} />
+                <Route path="/location/:id" element={<UpdateLocationForm />} />
+                <Route path="/config/config-form" element={<ConfigForm />} />
+                <Route path="/config" element={<ConfigTable />} />
+                <Route path="/config/:id" element={<ConfigTable />} />
+                <Route path="/route/manager" element={<RouteManager />} />
+                <Route path="/route/manager/:routeCode" element={<RouteDetail />} />
+                <Route path="/route/manager/edit/:routeCodeEdit" element={<EditRouteDetails />} />
+              </Routes>
+            </>
+          } />
         </Routes>
       </div>
     </Router>
