@@ -8,7 +8,7 @@ const Navbar = () => {
       <nav className="navbar">
         
         <div className="dropdown">
-        <Link to="/" className="dropbtn">Quản lý tuyến đường</Link>
+        <Link to="/route" className="dropbtn">Quản lý tuyến đường</Link>
         <div className="dropdown-content">
             <Link to="/route">Lộ trình</Link>
         
@@ -28,6 +28,11 @@ const Navbar = () => {
             <Link to="/config/config-form">Thêm mới</Link>
             <Link to="/config">Quản lý</Link>
           </div>
+        </div>
+
+        <div className="dropdown">
+        <Link to="/users" className="dropbtn">Tài khoản</Link>
+      
         </div>
       </nav>
     );

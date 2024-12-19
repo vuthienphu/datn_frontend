@@ -54,7 +54,7 @@ const Login = () => {
             type: 'success'
           });
           // Chuyển hướng đến trang chính hoặc dashboard
-          window.location.href = '/dashboard'; // Thay đổi đường dẫn theo yêu cầu của bạn
+          window.location.href = '/route'; // Thay đổi đường dẫn theo yêu cầu của bạn
         } else {
           setNotification({
             message: data.message || 'Đăng nhập thất bại. Vui lòng thử lại.',
@@ -117,3 +117,4 @@ const Login = () => {
 };
 
 export default Login;
+

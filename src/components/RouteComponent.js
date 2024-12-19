@@ -45,7 +45,7 @@ const customStyles = {
   }),
 };
 
-const Route = () => {
+const RouteComponent = () => {
   const [points, setPoints] = useState([]); // Điểm đã chọn
   const [locations, setLocations] = useState([]); // Danh sách tất cả các địa điểm từ API
   const [routeCode, setRouteCode] = useState(''); // Mã tuyến
@@ -469,4 +469,4 @@ useEffect(() => {
   );
 };
 
-export default Route;
+export default RouteComponent;

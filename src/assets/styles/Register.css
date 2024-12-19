@@ -112,29 +112,7 @@
   }
   /* ... CSS hiện tại ... */
 
-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-    text-align: center; /* Căn giữa text trong input */
-  }
-  
-  input:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-  }
-  
-  /* Placeholder căn giữa */
-  input::placeholder {
-    text-align: center;
-  }
-  
-  /* Khi focus vào input, placeholder vẫn căn giữa */
-  input:focus::placeholder {
-    text-align: center;
-  }
+
+ 
 
   

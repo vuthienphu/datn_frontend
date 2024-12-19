@@ -1,6 +1,6 @@
 import React from 'react';
 
-import MapComponent from './components/Route';
+import RouteComponent from './components/RouteComponent';
 import LocationSearch from './components/LocationSearch';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
@@ -15,7 +15,7 @@ import EditRouteDetails from './components/EditRouteDetails';
 import HomePage from './components/HomePage';
 import Register from './components/Register';
 import Login from './components/Login';
-
+import UserTable from './components/UserTable';
 function App() {
   return (
     <Router>
@@ -28,7 +28,7 @@ function App() {
             <>
               <Navbar />
               <Routes>
-                <Route path="/route" element={<MapComponent />} />
+                <Route path="/route" element={<RouteComponent />} />
                 <Route path="/location/location-search" element={<LocationSearch />} />
                 <Route path="/location" element={<LocationTable />} />
                 <Route path="/location/:id" element={<UpdateLocationForm />} />
@@ -38,6 +38,7 @@ function App() {
                 <Route path="/route/manager" element={<RouteManager />} />
                 <Route path="/route/manager/:routeCode" element={<RouteDetail />} />
                 <Route path="/route/manager/edit/:routeCodeEdit" element={<EditRouteDetails />} />
+                <Route path="/users" element={<UserTable />} />
               </Routes>
             </>
           } />
