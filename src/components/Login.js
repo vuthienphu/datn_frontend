@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../assets/styles/Login.css';
+import {jwtDecode} from 'jwt-decode';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -49,6 +50,12 @@ const Login = () => {
         const data = await response.json();
 
         if (response.ok) {
+          localStorage.setItem('token', data.token);
+          //localStorage.setItem('role', data.role); 
+          // Giả sử dữ liệu có chứa thông tin role
+          console.log(data.token);
+         
+        
           setNotification({
             message: 'Đăng nhập thành công!',
             type: 'success'
