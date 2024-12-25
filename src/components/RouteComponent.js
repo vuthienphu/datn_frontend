@@ -1,12 +1,15 @@
 import React, { useEffect, useState,useRef} from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import { defaultCustomMarkerIcon,startIcon } from './MapUtils';
+
 import 'leaflet/dist/leaflet.css';
 import { FaTimes } from 'react-icons/fa';
 import '../assets/styles/Route.css';
 import Select from 'react-select';
 import L from 'leaflet';  
-import 'leaflet-arrowheads'; 
+import 'leaflet-arrowheads';
+import 'leaflet-arrowheads';
+
 
 const customStyles = {
   menu: (provided) => ({
@@ -45,6 +48,7 @@ const customStyles = {
   }),
 };
 
+
 const RouteComponent = () => {
   const [points, setPoints] = useState([]); // Điểm đã chọn
   const [locations, setLocations] = useState([]); // Danh sách tất cả các địa điểm từ API
@@ -54,98 +58,75 @@ const RouteComponent = () => {
   const polylineRef = useRef(null); 
   const [polylineInstance, setPolylineInstance] = useState(null);
   const mapRef = useRef(null);
+  const [vehicleNumber, setVehicleNumber] = useState(''); // New state for vehicle number
+  const [vehicleNumberError, setVehicleNumberError] = useState(''); // New state for error message
+  
+ 
+  const routeColors = [
+    "blue", "green", "red", "purple", "orange", "brown", "pink", "cyan", "yellow"
+  ];
+  // Nếu số lượng xe lớn hơn số màu có sẵn, tự động lặp lại màu sắc
+  const getColorForRoute = (index) => routeColors[index % routeColors.length];
+
+
   // Fetch danh sách locations từ API
   useEffect(() => {
     fetchLocations();
   }, []);
 
- 
-/*
+  
   useEffect(() => {
-    if (polylineRef.current) {
-      polylineRef.current.arrowheads({
-        size: '20px', // Độ lớn của mũi tên
-        frequency: '200px', // Tần suất xuất hiện mũi tên
-        fill: true,
+
+    if (!polylineRef.current || actualRouteCoordinates.length < 2) return; 
+    if (actualRouteCoordinates.length > 0) {
+      const map = polylineRef.current._map;
+      if (!map) return;
+  
+      actualRouteCoordinates.forEach((routeCoords, index) => {
+       const polyline = L.polyline(routeCoords, {
+          color: getColorForRoute(index),
+          weight: 3,
+        }).addTo(map);
+  
+        // Thêm mũi tên vào polyline
+        polyline.arrowheads({
+          size: '10px',
+          frequency: '100px',
+          fill: true,
+          color: getColorForRoute(index), // Sử dụng màu của tuyến
+        });
       });
+  
+     
     }
-  }, [optimizedRoute, locations]); // Kích hoạt lại khi tuyến đường hoặc vị trí 
-  */
+  }, [actualRouteCoordinates]);
 
-  useEffect(() => {
-    if (!polylineRef.current || actualRouteCoordinates.length < 2) return;
-
-  const map = polylineRef.current._map;
-  if (!map) return;
-
-  // Tạo polyline mới
-  const newPolyline = L.polyline(actualRouteCoordinates, {
-    color: 'blue',
-    weight: 3,
-    opacity: 0.8
-  }).addTo(map);
-
-  // Thêm mũi tên
-  newPolyline.arrowheads({
-    size: '15px',
-    frequency: '100px',
-    fill: true,
-    yawn: 40
-  });
-
-  setPolylineInstance(newPolyline);
-
-  // Cleanup function
-  return () => {
-    try {
-      if (newPolyline) {
-        // Kiểm tra và xóa arrowheads nếu có
-        if (newPolyline.arrowheads) {
-          newPolyline.arrowheads().remove();
-        }
-        // Kiểm tra map trước khi xóa layer
-        if (map && map.hasLayer(newPolyline)) {
-          map.removeLayer(newPolyline);
-        }
-      }
-    } catch (error) {
-      console.error('Error in cleanup:', error);
-    }
-  };
-}, [actualRouteCoordinates]);
+ 
 
 useEffect(() => {
-  // Cleanup khi component unmount
   return () => {
-    try {
-      if (polylineInstance) {
-        if (polylineInstance.arrowheads) {
-          polylineInstance.arrowheads().remove();
-        }
-        if (polylineRef.current && polylineRef.current._map) {
-          polylineRef.current._map.removeLayer(polylineInstance);
-        }
-      }
-    } catch (error) {
-      console.error('Error in component cleanup:', error);
+    if (polylineInstance && polylineInstance.arrowheads) {
+      polylineInstance.arrowheads().remove(); // Xóa mũi tên
+    }
+    if (polylineRef.current && polylineRef.current._map) {
+      polylineRef.current._map.removeLayer(polylineInstance); // Xóa Polyline
     }
   };
-}, []);
+}, [polylineInstance] );
+const fetchLocations = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/locations');
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.json();
+    setLocations(data);
+  } catch (error) {
+    console.error('Error fetching locations:', error);
+  }
+};
   
-  const fetchLocations = async () => {
-    try {
-      const response = await fetch('http://localhost:8080/api/locations');
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-      setLocations(data);
-    } catch (error) {
-      console.error('Error fetching locations:', error);
-    }
-  };
- 
-
+  
   // Xử lý thêm điểm mới
   const handleAddPoint = () => {
     setPoints([...points, { id: Date.now(), name: '', location: '' }]);
@@ -231,7 +212,7 @@ useEffect(() => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ routeCode, optimizeRouteCoordinates }),
+          body: JSON.stringify({ routeCode, optimizeRouteCoordinates,vehicleNumber }),
         }),
       ]);
 
@@ -255,26 +236,33 @@ useEffect(() => {
       }
       const optimizeRouteResult = await optimizeRouteResponse.json();
       console.log('Kết quả tìm đường tối ưu:', optimizeRouteResult);
+      setOptimizedRoute(optimizeRouteResult);
+      console.log('Optimized Route:', optimizeRouteResult);
+      //const coordinates = getCoordinatesFromOptimizedRoute(optimizeRouteResult, locations);
+      // Lấy tuyến đường thực tế
+      await getActualRoutesBetweenPoints(optimizeRouteResult);
 
-      if (optimizeRouteResult && optimizeRouteResult.length > 0) {
-        setOptimizedRoute(optimizeRouteResult);
-        
-        // Lấy tọa độ của tuyến đường tối ưu
-        const coordinates = getCoordinatesFromOptimizedRoute(optimizeRouteResult, locations);
-        
-        // Lấy tuyến đường thực tế giữa các điểm
-        const actualRoute = await getActualRouteBetweenPoints(coordinates);
-        setActualRouteCoordinates(actualRoute);
-        console.log("actualRoute:",actualRoute);
-      } else {
-        console.error('Dữ liệu tối ưu không hợp lệ hoặc rỗng:', optimizeRouteResult);
+      const newRequestResponse = await fetch('http://localhost:8080/api/vehiclenumber', { // Replace with your actual endpoint
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ routeCode,vehicleNumber }), // Replace with your actual data
+      });
+  
+      // Kiểm tra phản hồi từ yêu cầu m���i
+      if (!newRequestResponse.ok) {
+        throw new Error('Không thể thực hiện yêu cầu mới');
       }
+      const newRequestResult = await newRequestResponse.json();
+      console.log('Kết quả yêu cầu mới:', newRequestResult);
 
       console.log('optimizedRoute:', optimizedRoute);
   console.log('locations:', locations);
   console.log(
     'Coordinates:',
     getCoordinatesFromOptimizedRoute(optimizedRoute, locations)
+    
   );
     } catch (error) {
       console.error('Lỗi khi gửi yêu cầu:', error);
@@ -282,7 +270,7 @@ useEffect(() => {
     }
   };
 
-  
+  /*
   const getCoordinatesFromOptimizedRoute = (route, allLocations) => {
     return route
       .map((pointCode) => {
@@ -292,45 +280,71 @@ useEffect(() => {
       })
       .filter((pos) => pos !== null); // Lọc bỏ các điểm không hợp lệ
   };
+*/
 
-  // Thêm hàm mới để lấy tuyến đường thực tế giữa các điểm
-  const getActualRouteBetweenPoints = async (coordinates) => {
-    try {
-      // Tạo mảng promises cho mỗi cặp điểm liên tiếp
-      const routePromises = [];
-      for (let i = 0; i < coordinates.length - 1; i++) {
-        const start = coordinates[i];
-        const end = coordinates[i + 1];
-        const coordinateString = `${start[1]},${start[0]};${end[1]},${end[0]}`;
-        
-        routePromises.push(
-          fetch(`http://router.project-osrm.org/route/v1/driving/${coordinateString}?overview=full&geometries=geojson`)
-            .then(response => response.json())
-        );
-      }
+const getCoordinatesFromOptimizedRoute = (route, allLocations) => {
+  return route
+    .map((pointCode) => {
+      const location = allLocations.find((loc) => loc.pointCode === pointCode);
+      return location ? [location.latitude, location.longitude] : null;
+    })
+    .filter((pos) => pos !== null); // Lọc bỏ các điểm không hợp lệ
+};
+const getActualRoutesBetweenPoints = async (routes) => {
+  try {
+    const allRoutesCoordinates = await Promise.all(
+      routes.map(async (route) => {
+        const coordinates = getCoordinatesFromOptimizedRoute(route, locations);
+        const routePromises = [];
 
-      // Đợi tất cả các promises hoàn thành
-      const results = await Promise.all(routePromises);
-      
-      // Kết hợp tất cả các đoạn đường thành một mảng tọa độ duy nhất
-      let allCoordinates = [];
-      results.forEach(data => {
-        if (data.routes && data.routes[0] && data.routes[0].geometry) {
-          const segmentCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-          allCoordinates = [...allCoordinates, ...segmentCoords];
+        for (let i = 0; i < coordinates.length - 1; i++) {
+          const start = coordinates[i];
+          const end = coordinates[i + 1];
+          const coordinateString = `${start[1]},${start[0]};${end[1]},${end[0]}`;
+          routePromises.push(
+            fetch(
+              `http://router.project-osrm.org/route/v1/driving/${coordinateString}?overview=full&geometries=geojson`
+            ).then((response) => response.json())
+          );
         }
-      });
 
-      return allCoordinates;
-    } catch (error) {
-      console.error('Error fetching actual route:', error);
-      return [];
+        const results = await Promise.all(routePromises);
+        let routeCoordinates = [];
+        results.forEach((data) => {
+          if (data.routes && data.routes[0]?.geometry) {
+            const segmentCoords = data.routes[0].geometry.coordinates.map(
+              (coord) => [coord[1], coord[0]]
+            );
+            routeCoordinates = [...routeCoordinates, ...segmentCoords];
+          }
+        });
+
+        return routeCoordinates;
+      })
+    );
+    setActualRouteCoordinates(allRoutesCoordinates);
+    console.log('Actual Route Coordinates:', allRoutesCoordinates);
+  } catch (error) {
+    console.error("Error fetching actual routes:", error);
+  }
+};
+
+  // Update the vehicle number input handler
+  const handleVehicleNumberChange = (e) => {
+    const value = e.target.value;
+    setVehicleNumber(value);
+    
+    // Validate if the input is a number
+    if (isNaN(value) || value.trim() === '') {
+      setVehicleNumberError('Vui lòng nhập một số hợp lệ'); // Error message
+    } else {
+      setVehicleNumberError(''); // Clear error message
     }
   };
 
   return (
-    <>
-      <div className="route-container">
+    <div className="route-container">
+      <div className="input-container">
         <div className="route-code-input">
           <label htmlFor="routeCode">Mã tuyến:</label>
           <input
@@ -340,6 +354,18 @@ useEffect(() => {
             onChange={(e) => setRouteCode(e.target.value)}
             placeholder="Nhập mã tuyến"
           />
+        </div>
+
+        <div className="vehicle-number-input">
+          <label htmlFor="vehicleNumber">Số xe:</label>
+          <input
+            type="text"
+            id="vehicleNumber"
+            value={vehicleNumber}
+            onChange={handleVehicleNumberChange}
+            placeholder="Nhập số xe"
+          />
+          {vehicleNumberError && <div className="error-message">{vehicleNumberError}</div>}
         </div>
 
         <table className="points-table">
@@ -383,89 +409,63 @@ useEffect(() => {
           <button onClick={handleFindRoute} disabled={points.length < 2}>
             Tìm đường
           </button>
-         
         </div>
       </div>
+
       <div className="map-container">
-      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }} whenCreated={(map) => {
-    mapRef.current = map;
-  }} ref={polylineRef}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
-
-{optimizedRoute.length > 0 && locations.length > 0 && (
-  <>
-    {/* Hiển thị điểm xuất phát */}
-    {(() => {
-      const startLocation = locations.find(
-        (loc) => loc.pointCode === optimizedRoute[0] // Điểm đầu tiên của tuyến tối ưu
-      );
-      if (startLocation) {
-        return (
-          <Marker
-            position={[startLocation.latitude, startLocation.longitude]}
-            icon={startIcon} // Biểu tượng màu đỏ cho điểm xuất phát
-          >
-            <Popup>
-              <strong>Điểm xuất phát:</strong> {startLocation.pointName} <br />
-              <strong>Địa chỉ:</strong> {startLocation.address}
-            </Popup>
-          </Marker>
-        );
-      }
-      return null;
-    })()}
-
-    {/* Hiển thị các điểm còn lại */}
-    {optimizedRoute.slice(1).map((pointCode, index) => {
-      const location = locations.find((loc) => loc.pointCode === pointCode);
-      if (location) {
-        return (
-          <Marker
-            key={index}
-            position={[location.latitude, location.longitude]}
-            icon={defaultCustomMarkerIcon} // Biểu tượng mặc định cho các điểm khác
-          >
-            <Popup>
-              <strong>Tên điểm:</strong> {location.pointName} <br />
-              <strong>Địa chỉ:</strong> {location.address}
-            </Popup>
-          </Marker>
-        );
-      }
-      return null;
-    })}
-  </>
-)}
-
-
-
-      {/* Vẽ tuyến đường tối ưu
-        {getCoordinatesFromOptimizedRoute(optimizedRoute, locations).length > 1 && (
-          <Polyline
-          ref={polylineRef} // Thêm ref để truy cập Polyline
-          positions={getCoordinatesFromOptimizedRoute(optimizedRoute, locations)}
-          color="blue"
+        <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }} whenCreated={(map) => {
+          mapRef.current = map;
+        }} ref={polylineRef}>
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
           />
-        )} */}
+          {/* Hiển thị các điểm trên bản đồ */}
+          {optimizedRoute.map((route, routeIndex) =>
+            route.map((pointCode, pointIndex) => {
+              const location = locations.find((loc) => loc.pointCode === pointCode);
+              if (!location) return null;
 
-        {/* Thay đổi cách hiển thị Polyline */}
-        {actualRouteCoordinates.length > 1 && (
-          <Polyline
-            ref={polylineRef}
-            positions={actualRouteCoordinates}
-            color="blue"
-            weight={3} // Độ dày của đường
-          />
-        )}
-
-       
-      </MapContainer>
-   
-</div>
-    </>
+              return (
+                <Marker
+                  key={`${routeIndex}-${pointIndex}`}
+                  position={[location.latitude, location.longitude]}
+                  icon={pointIndex === 0 ? startIcon : defaultCustomMarkerIcon}
+                >
+                  <Popup>
+                    <strong>{location.pointName}</strong>
+                    <br />
+                    {location.address}
+                  </Popup>
+                </Marker>
+              );
+            })
+          )}
+          {/* Hiển thị các tuyến đường thực tế */}
+          {actualRouteCoordinates.map((routeCoords, index) => {
+            const polyline = (
+              <Polyline
+                key={index}
+                positions={routeCoords}
+                color={getColorForRoute(index)} // Màu sắc khác nhau cho từng tuyến
+                weight={3}
+                ref={(ref) => {
+                  if (ref) {
+                    ref.arrowheads({
+                      size: '10px',
+                      frequency: '100px',
+                      fill: true,
+                      color: getColorForRoute(index), // Sử dụng màu của tuyến
+                    });
+                  }
+                }}
+              />
+            );
+            return polyline;
+          })}
+        </MapContainer>
+      </div>
+    </div>
   );
 };
 
