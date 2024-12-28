@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import Pagination from './Pagination'; // Import the Pagination component
+import { useNavigate } from 'react-router-dom';
+import Pagination from './Pagination';
 import '../assets/styles/UserTable.css';
 
 const UserTable = () => {
-  const [users, setUsers] = useState([]); // Thay đổi tên state thành users
+  const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('USER');
+  const navigate = useNavigate();
 
-  // Fetch dữ liệu từ API
   useEffect(() => {
     axios
-      .get('http://localhost:8080/api/users') // Thay đổi URL API cho người dùng
+      .get('http://localhost:8080/api/users')
       .then((response) => {
         setUsers(response.data);
       })
@@ -24,7 +25,6 @@ const UserTable = () => {
       });
   }, []);
 
-  // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentUsers = users.slice(indexOfFirstItem, indexOfLastItem);
@@ -34,27 +34,54 @@ const UserTable = () => {
     setIsModalOpen(true);
   };
 
-  // Đóng modal
   const closeDeleteModal = () => {
     setIsModalOpen(false);
     setSelectedUserId(null);
   };
 
-  // Xử lý xác nhận xóa
   const confirmDelete = () => {
-    if (selectedUserId) { // Kiểm tra xem selectedUserId có hợp lệ không
+    if (selectedUserId) {
+      axios
+        .delete(`http://localhost:8080/api/user/${selectedUserId}`)
+        .then(() => {
+          setUsers(users.filter((user) => user.id !== selectedUserId));
+          closeDeleteModal();
+        })
+        .catch((error) => {
+          console.error('Lỗi khi xóa:', error);
+        });
+    } else {
+      console.error('Không có ID người dùng để xóa.');
+    }
+  };
+
+  const openRoleModal = (id) => {
+    setSelectedUserId(id);
+    setIsRoleModalOpen(true);
+  };
+
+  const closeRoleModal = () => {
+    setIsRoleModalOpen(false);
+    setSelectedUserId(null);
+    setSelectedRole('USER');
+  };
+
+  const confirmRoleChange = () => {
+    console.log('Selected Role:', selectedRole);
+    if (selectedUserId) {
         axios
-          .delete(`http://localhost:8080/api/user/${selectedUserId}`) // Thay đổi URL API cho xóa người dùng
-          .then(() => {
-            setUsers(users.filter((user) => user.id !== selectedUserId));
-            closeDeleteModal();
-          })
-          .catch((error) => {
-            console.error('Lỗi khi xóa:', error);
-          });
-      } else {
-        console.error('Không có ID người dùng để xóa.'); // Thêm thông báo lỗi nếu không có ID
-      }
+            .put(`http://localhost:8080/api/user/${selectedUserId}`, { role: selectedRole })
+            .then(() => {
+                // Cập nhật danh sách người dùng để phản ánh quyền mới
+                setUsers(users.map(user => 
+                    user.id === selectedUserId ? { ...user, role: selectedRole } : user
+                ));
+                closeRoleModal(); // Đóng modal
+            })
+            .catch((error) => {
+                console.error('Lỗi khi thay đổi quyền:', error);
+            });
+    }
   };
 
   return (
@@ -83,6 +110,9 @@ const UserTable = () => {
                 <button className="delete-button" onClick={() => openDeleteModal(user.id)}>
                   Xóa
                 </button>
+                <button className="role-button" onClick={() => openRoleModal(user.id)}>
+                  Thay đổi quyền
+                </button>
               </td>
             </tr>
           ))}
@@ -96,7 +126,7 @@ const UserTable = () => {
         onPageChange={setCurrentPage}
       />
 
-{isModalOpen && (
+      {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Xác nhận xóa</h3>
@@ -106,6 +136,26 @@ const UserTable = () => {
                 Hủy
               </button>
               <button className="confirm-button" onClick={confirmDelete}>
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isRoleModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Thay đổi quyền</h3>
+            <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
+              <option value="USER">USER</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={closeRoleModal}>
+                Hủy
+              </button>
+              <button className="confirm-button" onClick={confirmRoleChange}>
                 Xác nhận
               </button>
             </div>
