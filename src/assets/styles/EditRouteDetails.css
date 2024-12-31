@@ -1,0 +1,15 @@
+
+.route-container {
+    display: flex; /* Sử dụng Flexbox để sắp xếp */
+    flex-direction: row; /* Sắp xếp theo hàng */
+  }
+  
+  .map-container {
+    flex: 1; /* Chiếm không gian còn lại */
+    height: 500px; /* Đặt chiều cao cho bản đồ */
+  }
+  .error-message {
+    color: red; /* Màu đỏ cho thông báo lỗi */
+    font-size: 12px; /* Kích thước chữ nhỏ hơn */
+    margin-top: 5px; /* Khoảng cách giữa ô input và thông báo lỗi */
+  }

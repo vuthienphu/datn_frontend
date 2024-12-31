@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'; // Import useParams để lấy ro
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import { defaultCustomMarkerIcon, startIcon } from './MapUtils';
 import 'leaflet/dist/leaflet.css';
-import '../assets/styles/Route.css';
+import '../assets/styles/EditRouteDetails.css';
 import { FaTimes } from 'react-icons/fa';
 import Select from 'react-select';
 import 'leaflet-arrowheads'; 
@@ -56,9 +56,11 @@ const EditRouteDetails = () => {
 const [polylineInstance, setPolylineInstance] = useState(null);
   const polylineRef = useRef(null);
   const mapRef = useRef(null);
-
+  const [vehicleNumber, setVehicleNumber] = useState(''); // Thêm state cho số xe
+  const [errorMessage, setErrorMessage] = useState(''); // Thêm state cho thông báo lỗi
   useEffect(() => {
     fetchLocations();
+    fetchVehicleNumber();
   }, []); // Load locations first
   
   useEffect(() => {
@@ -149,6 +151,18 @@ useEffect(() => {
       setLocations(data);
     } catch (error) {
       console.error('Error fetching locations:', error);
+    }
+  };
+  const fetchVehicleNumber = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/vehiclenumber/${routeCodeEdit}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      setVehicleNumber(data.vehicleNumber); // Cập nhật state với số xe
+    } catch (error) {
+      console.error('Error fetching vehicle number:', error);
     }
   };
 
@@ -375,9 +389,21 @@ useEffect(() => {
       .filter((pos) => pos !== null); // Lọc bỏ các điểm không hợp lệ
   };
 
+  const handleVehicleNumberChange = (e) => {
+    const value = e.target.value;
+    setVehicleNumber(value);
+    
+    // Validate if the input is a number
+    if (isNaN(value) || value.trim() === '') {
+      setErrorMessage('Vui lòng nhập một số hợp lệ'); // Error message
+    } else {
+      setErrorMessage(''); // Clear error message
+    }
+  };
+
   return (
-    <>
     <div className="route-container">
+      <div className="input-container">
         <div className="route-code-input">
           <label htmlFor="routeCode">Mã tuyến:</label>
           <input
@@ -387,6 +413,17 @@ useEffect(() => {
             onChange={(e) => setRouteCode(e.target.value)}
             placeholder="Nhập mã tuyến"
           />
+        </div>
+        <div className="vehicle-number-input">
+          <label htmlFor="vehicleNumber">Số xe:</label>
+          <input
+            type="text"
+            id="vehicleNumber"
+            value={vehicleNumber}
+            onChange={handleVehicleNumberChange}
+            placeholder="Nhập số xe"
+          />
+          {errorMessage && <div className="error-message">{errorMessage}</div>}
         </div>
 
         <table className="points-table">
@@ -430,76 +467,76 @@ useEffect(() => {
           <button onClick={handleFindRoute} disabled={points.length < 2}>
             Tìm đường
           </button>
-         
         </div>
       </div>
-    <div className="map-container">
-      <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '500px', width: '100%' }} whenCreated={(map) => {
-          mapRef.current = map;
-        }} >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
 
-        {optimizedRoute.length > 0 && locations.length > 0 && (
-          <>
-            {/* Hiển thị điểm xuất phát */}
-            {(() => {
-              const startLocation = locations.find(
-                (loc) => loc.pointCode === optimizedRoute[0] // Điểm đầu tiên của tuyến tối ưu
-              );
-              if (startLocation) {
-                return (
-                  <Marker
-                    position={[startLocation.latitude, startLocation.longitude]}
-                    icon={startIcon} // Biểu tượng màu đỏ cho điểm xuất phát
-                  >
-                    <Popup>
-                      <strong>Điểm xuất phát:</strong> {startLocation.pointName} <br />
-                      <strong>Địa chỉ:</strong> {startLocation.address}
-                    </Popup>
-                  </Marker>
+      <div className="map-container">
+        <MapContainer center={[21.0285, 105.8542]} zoom={13} style={{ height: '100%', width: '100%' }} whenCreated={(map) => {
+            mapRef.current = map;
+          }} >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
+          />
+
+          {optimizedRoute.length > 0 && locations.length > 0 && (
+            <>
+              {/* Hiển thị điểm xuất phát */}
+              {(() => {
+                const startLocation = locations.find(
+                  (loc) => loc.pointCode === optimizedRoute[0] // Điểm đầu tiên của tuyến tối ưu
                 );
-              }
-              return null;
-            })()}
+                if (startLocation) {
+                  return (
+                    <Marker
+                      position={[startLocation.latitude, startLocation.longitude]}
+                      icon={startIcon} // Biểu tượng màu đỏ cho điểm xuất phát
+                    >
+                      <Popup>
+                        <strong>Điểm xuất phát:</strong> {startLocation.pointName} <br />
+                        <strong>Địa chỉ:</strong> {startLocation.address}
+                      </Popup>
+                    </Marker>
+                  );
+                }
+                return null;
+              })()}
 
-            {/* Hiển thị các điểm còn lại */}
-            {optimizedRoute.slice(1).map((pointCode, index) => {
-              const location = locations.find((loc) => loc.pointCode === pointCode);
-              if (location) {
-                return (
-                  <Marker
-                    key={index}
-                    position={[location.latitude, location.longitude]}
-                    icon={defaultCustomMarkerIcon} // Biểu tượng mặc định cho các điểm khác
-                  >
-                    <Popup>
-                      <strong>Tên điểm:</strong> {location.pointName} <br />
-                      <strong>Địa chỉ:</strong> {location.address}
-                    </Popup>
-                  </Marker>
-                );
-              }
-              return null;
-            })}
-          </>
-        )}
+              {/* Hiển thị các điểm còn lại */}
+              {optimizedRoute.slice(1).map((pointCode, index) => {
+                const location = locations.find((loc) => loc.pointCode === pointCode);
+                if (location) {
+                  return (
+                    <Marker
+                      key={index}
+                      position={[location.latitude, location.longitude]}
+                      icon={defaultCustomMarkerIcon} // Biểu tượng mặc định cho các điểm khác
+                    >
+                      <Popup>
+                        <strong>Tên điểm:</strong> {location.pointName} <br />
+                        <strong>Địa chỉ:</strong> {location.address}
+                      </Popup>
+                    </Marker>
+                  );
+                }
+                return null;
+              })}
+            </>
+          )}
 
-{actualRouteCoordinates.length > 1 && (
-  <Polyline
-    ref={polylineRef}
-    positions={actualRouteCoordinates}
-    pathOptions={{
-      color: 'blue',
-      weight: 3
-    }}
-  />
-)}
-      </MapContainer>
+          {actualRouteCoordinates.length > 1 && (
+            <Polyline
+              ref={polylineRef}
+              positions={actualRouteCoordinates}
+              pathOptions={{
+                color: 'blue',
+                weight: 3
+              }}
+            />
+          )}
+        </MapContainer>
+      </div>
     </div>
-    </>
   );
 };
 
