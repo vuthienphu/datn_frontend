@@ -21,7 +21,7 @@ const RouteDetail = () => {
   useEffect(() => {
     const fetchRouteData = async () => {
       try {
-        const response = await fetch(`http://localhost:8080/api/route/${routeCode}`);
+        const response = await fetch(`http://localhost:8080/api/optimizeroute/${routeCode}`);
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -142,6 +142,7 @@ const RouteDetail = () => {
                     >
                       <Popup>
                         <strong>Tên điểm:</strong> {location.pointName} <br />
+                        <strong>Mã điểm:</strong> {location.pointCode} <br />
                         <strong>Địa chỉ:</strong> {location.address}
                       </Popup>
                     </Marker>

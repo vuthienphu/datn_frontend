@@ -433,9 +433,10 @@ const getActualRoutesBetweenPoints = async (routes) => {
                   icon={pointIndex === 0 ? startIcon : defaultCustomMarkerIcon}
                 >
                   <Popup>
-                    <strong>{location.pointName}</strong>
-                    <br />
-                    {location.address}
+                  <strong>Tên điểm:</strong> {location.pointName} <br />
+                        <strong>Mã điểm:</strong> {location.pointCode} <br />
+                        <strong>Địa chỉ:</strong> {location.address}
+                    
                   </Popup>
                 </Marker>
               );
